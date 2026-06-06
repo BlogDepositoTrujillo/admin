@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo TV V3.1</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+background:#111;
+color:white;
+height:100vh;
+overflow:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+#pantallaNormal{
+width:100%;
+height:100%;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+padding:20px;
+}
+
+.titulo{
+font-size:45px;
+font-weight:bold;
+margin-bottom:20px;
+}
+
+.numero{
+font-size:220px;
+font-weight:bold;
+line-height:1;
+text-align:center;
+}
+
+.animar{
+animation:zoom .8s ease;
+}
+
+@keyframes zoom{
+
+0%{
+transform:scale(.3);
+opacity:0;
+}
+
+60%{
+transform:scale(1.2);
+}
+
+100%{
+transform:scale(1);
+opacity:1;
+}
+
+}
+
+.subtitulo{
+margin-top:20px;
+font-size:28px;
+}
+
+.ultimos5{
+display:flex;
+gap:15px;
+margin-top:20px;
+flex-wrap:wrap;
+justify-content:center;
+}
+
+.bola-destacada{
+background:#ff9800;
+padding:15px 25px;
+border-radius:50px;
+font-size:30px;
+font-weight:bold;
+}
+
+.historial{
+position:absolute;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+width:90%;
+display:flex;
+justify-content:center;
+flex-wrap:wrap;
+gap:8px;
+}
+
+.bola{
+background:#444;
+padding:8px 15px;
+border-radius:30px;
+font-size:18px;
+font-weight:bold;
+}
+
+.footer{
+position:absolute;
+top:15px;
+right:20px;
+font-size:18px;
+opacity:.7;
+}
+
+/* GANADOR */
+
+#pantallaGanador{
+display:none;
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:linear-gradient(135deg,#0d7a00,#13a000);
+justify-content:center;
+align-items:center;
+flex-direction:column;
+text-align:center;
+animation:pulse 1.5s infinite;
+padding:30px;
+}
+
+@keyframes pulse{
+
+0%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.03);
+}
+
+100%{
+transform:scale(1);
+}
+
+}
+
+.ganadorTitulo{
+font-size:90px;
+font-weight:bold;
+}
+
+.ganadorTexto{
+font-size:60px;
+margin-top:20px;
+}
+
+.nombreGanador{
+margin-top:30px;
+font-size:80px;
+font-weight:bold;
+color:#fff700;
+text-shadow:
+0 0 10px #fff700,
+0 0 20px #fff700,
+0 0 40px #fff700;
+word-break:break-word;
+max-width:90%;
+}
+
+</style>
+</head>
+<body>
+
+<div id="pantallaNormal">
+
+<div class="footer">
+DEPÓSITO TRUJILLO SAS
+</div>
+
+<div class="titulo">
+🎱 ÚLTIMA BALOTA
+</div>
+
+<div id="numero" class="numero">
+--
+</div>
+
+<div class="subtitulo">
+Últimas 5 balotas
+</div>
+
+<div id="ultimos5" class="ultimos5">
+</div>
+
+<div id="historial" class="historial">
+</div>
+
+</div>
+
+<div id="pantallaGanador">
+
+<div class="ganadorTitulo">
+🏆 BINGO 🏆
+</div>
+
+<div class="ganadorTexto">
+TENEMOS GANADOR
+</div>
+
+<div
+id="nombreGanadorTV"
+class="nombreGanador">
+</div>
+
+</div>
+
+<audio id="sonido">
+<source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg">
+</audio>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBn5NKTqkMfKiArerG5LgytLa4h67hjfog",
+authDomain: "bingo-d817b.firebaseapp.com",
+databaseURL: "https://bingo-d817b-default-rtdb.firebaseio.com",
+projectId: "bingo-d817b",
+storageBucket: "bingo-d817b.firebasestorage.app",
+messagingSenderId: "763915768353",
+appId: "1:763915768353:web:311d4124789acd14614960"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let ultimoNumero = "";
+
+/* ULTIMA BALOTA */
+
+onValue(
+ref(db,"bingo/ultimoNumero"),
+(snapshot)=>{
+
+const valor = snapshot.val();
+
+if(!valor) return;
+
+document.getElementById("numero").innerHTML = valor;
+
+if(valor !== ultimoNumero){
+
+const numero =
+document.getElementById("numero");
+
+numero.classList.remove("animar");
+
+setTimeout(()=>{
+numero.classList.add("animar");
+},50);
+
+document
+.getElementById("sonido")
+.play()
+.catch(()=>{});
+
+ultimoNumero = valor;
+
+}
+
+}
+);
+
+/* HISTORIAL */
+
+onValue(
+ref(db,"bingo/historial"),
+(snapshot)=>{
+
+if(!snapshot.exists()){
+
+document.getElementById("historial").innerHTML="";
+document.getElementById("ultimos5").innerHTML="";
+return;
+
+}
+
+const datos =
+Object.values(snapshot.val());
+
+const lista =
+datos.reverse();
+
+let htmlHistorial = "";
+let htmlUltimos = "";
+
+lista.forEach(item=>{
+
+htmlHistorial += `
+<div class="bola">
+${item.numero}
+</div>
+`;
+
+});
+
+lista
+.slice(0,5)
+.reverse()
+.forEach(item=>{
+
+htmlUltimos += `
+<div class="bola-destacada">
+${item.numero}
+</div>
+`;
+
+});
+
+document.getElementById("historial").innerHTML =
+htmlHistorial;
+
+document.getElementById("ultimos5").innerHTML =
+htmlUltimos;
+
+}
+);
+
+/* NOMBRE DEL GANADOR */
+
+onValue(
+ref(db,"bingo/ganador"),
+(snapshot)=>{
+
+document.getElementById(
+"nombreGanadorTV"
+).innerHTML =
+snapshot.val() || "";
+
+}
+);
+
+/* MODO */
+
+onValue(
+ref(db,"bingo/modo"),
+(snapshot)=>{
+
+const modo = snapshot.val();
+
+if(modo === "ganador"){
+
+document.getElementById(
+"pantallaNormal"
+).style.display="none";
+
+document.getElementById(
+"pantallaGanador"
+).style.display="flex";
+
+}else{
+
+document.getElementById(
+"pantallaNormal"
+).style.display="flex";
+
+document.getElementById(
+"pantallaGanador"
+).style.display="none";
+
+}
+
+}
+);
+
+</script>
+
+</body>
+</html>
