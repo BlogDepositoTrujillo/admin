@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrador Bingo</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+padding:30px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+}
+
+.panel{
+background:white;
+padding:30px;
+border-radius:15px;
+box-shadow:0 0 15px rgba(0,0,0,.1);
+}
+
+h1{
+margin-bottom:20px;
+}
+
+.controles{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+select,input{
+padding:15px;
+font-size:22px;
+border:1px solid #ccc;
+border-radius:8px;
+}
+
+.numero{
+font-size:120px;
+text-align:center;
+font-weight:bold;
+color:#d32f2f;
+margin:20px 0;
+}
+
+.botones{
+display:flex;
+gap:10px;
+}
+
+button{
+flex:1;
+padding:15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-size:18px;
+color:white;
+}
+
+.preview{
+background:#1976d2;
+}
+
+.revelar{
+background:#2e7d32;
+}
+
+.historial{
+margin-top:30px;
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.bola{
+padding:12px 18px;
+background:#ff9800;
+color:white;
+border-radius:30px;
+font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="panel">
+
+<h1>🔒 Vista del Operador</h1>
+
+<div class="controles">
+
+<select id="letra">
+<option>B</option>
+<option>I</option>
+<option>N</option>
+<option>G</option>
+<option>O</option>
+</select>
+
+<input
+type="number"
+id="numero"
+min="1"
+max="75"
+placeholder="Número">
+
+</div>
+
+<div id="preview" class="numero">
+--
+</div>
+
+<div class="botones">
+
+<button
+class="preview"
+onclick="previsualizar()">
+Previsualizar
+</button>
+
+<button
+class="revelar"
+onclick="revelar()">
+Revelar
+</button>
+
+</div>
+
+<div
+id="historial"
+class="historial">
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let pendiente = null;
+
+function previsualizar(){
+
+let letra =
+document.getElementById("letra").value;
+
+let numero =
+document.getElementById("numero").value;
+
+if(numero==""){
+alert("Ingrese un número");
+return;
+}
+
+pendiente =
+letra + "-" +
+numero.padStart(2,"0");
+
+document.getElementById("preview")
+.innerHTML = pendiente;
+
+}
+
+function revelar(){
+
+if(!pendiente){
+alert("Previsualice primero");
+return;
+}
+
+localStorage.setItem(
+"ultimoNumero",
+pendiente
+);
+
+let historial =
+JSON.parse(
+localStorage.getItem("historial")
+|| "[]"
+);
+
+historial.push(pendiente);
+
+localStorage.setItem(
+"historial",
+JSON.stringify(historial)
+);
+
+actualizarHistorial();
+
+document.getElementById("preview")
+.innerHTML = "--";
+
+document.getElementById("numero")
+.value="";
+
+pendiente = null;
+}
+
+function actualizarHistorial(){
+
+let historial =
+JSON.parse(
+localStorage.getItem("historial")
+|| "[]"
+);
+
+let html="";
+
+historial.forEach(item=>{
+
+html += `
+<div class="bola">
+${item}
+</div>
+`;
+
+});
+
+document.getElementById("historial")
+.innerHTML = html;
+
+}
+
+actualizarHistorial();
+
+</script>
+
+</body>
+</html>
