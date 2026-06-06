@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrador Bingo V2.0</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f5f5f5;
+padding:30px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+}
+
+.panel{
+background:white;
+padding:30px;
+border-radius:15px;
+box-shadow:0 0 15px rgba(0,0,0,.1);
+}
+
+h1{
+text-align:center;
+margin-bottom:25px;
+}
+
+input{
+width:100%;
+padding:18px;
+font-size:28px;
+border:1px solid #ccc;
+border-radius:10px;
+text-transform:uppercase;
+}
+
+.numero{
+font-size:120px;
+font-weight:bold;
+text-align:center;
+color:#d32f2f;
+margin:30px 0;
+word-break:break-word;
+}
+
+.botones{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+margin-bottom:20px;
+}
+
+button{
+padding:15px;
+border:none;
+border-radius:10px;
+font-size:18px;
+font-weight:bold;
+cursor:pointer;
+color:white;
+}
+
+.preview{
+background:#1976d2;
+}
+
+.revelar{
+background:#2e7d32;
+}
+
+.nuevo{
+background:#ff9800;
+}
+
+.borrar{
+background:#c62828;
+}
+
+.ganador{
+background:#6a1b9a;
+}
+
+.normal{
+background:#455a64;
+}
+
+.historial{
+margin-top:30px;
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.bola{
+padding:12px 18px;
+background:#ff9800;
+color:white;
+border-radius:30px;
+font-weight:bold;
+}
+
+@media(max-width:768px){
+
+.botones{
+grid-template-columns:1fr;
+}
+
+.numero{
+font-size:70px;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="panel">
+
+<h1>🔒 Panel Operador Bingo</h1>
+
+<input
+type="text"
+id="codigo"
+placeholder="Ejemplo: B-12, A001, BONO50">
+
+<div id="preview" class="numero">
+--
+</div>
+
+<div class="botones">
+
+<button
+class="preview"
+onclick="previsualizar()">
+👁️ Previsualizar
+</button>
+
+<button
+class="revelar"
+onclick="revelar()">
+📢 Revelar
+</button>
+
+<button
+class="nuevo"
+onclick="nuevoBingo()">
+🎱 Nuevo Bingo
+</button>
+
+<button
+class="borrar"
+onclick="borrarHistorial()">
+🗑️ Borrar Historial
+</button>
+
+<button
+class="ganador"
+onclick="mostrarGanador()">
+🏆 Mostrar Ganador
+</button>
+
+<button
+class="normal"
+onclick="modoNormal()">
+🔄 Modo Normal
+</button>
+
+</div>
+
+<h2>Historial</h2>
+
+<div id="historial" class="historial">
+</div>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+set,
+push,
+get,
+remove
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBn5NKTqkMfKiArerG5LgytLa4h67hjfog",
+authDomain: "bingo-d817b.firebaseapp.com",
+databaseURL: "https://bingo-d817b-default-rtdb.firebaseio.com",
+projectId: "bingo-d817b",
+storageBucket: "bingo-d817b.firebasestorage.app",
+messagingSenderId: "763915768353",
+appId: "1:763915768353:web:311d4124789acd14614960"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let pendiente = null;
+
+window.previsualizar = function(){
+
+let codigo =
+document.getElementById("codigo")
+.value
+.trim()
+.toUpperCase();
+
+if(codigo===""){
+
+alert("Ingrese una balota");
+
+return;
+
+}
+
+pendiente = codigo;
+
+document.getElementById("preview")
+.innerHTML = codigo;
+
+}
+
+window.revelar = async function(){
+
+if(!pendiente){
+
+alert("Primero previsualice");
+
+return;
+
+}
+
+try{
+
+await set(
+ref(db,"bingo/ultimoNumero"),
+pendiente
+);
+
+await set(
+ref(db,"bingo/modo"),
+"normal"
+);
+
+await push(
+ref(db,"bingo/historial"),
+{
+numero: pendiente,
+fecha: Date.now()
+}
+);
+
+document.getElementById("codigo").value="";
+
+document.getElementById("preview")
+.innerHTML="--";
+
+pendiente=null;
+
+cargarHistorial();
+
+}catch(error){
+
+console.error(error);
+
+alert("Error enviando a Firebase");
+
+}
+
+}
+
+window.borrarHistorial = async function(){
+
+if(!confirm("¿Borrar historial completo?"))
+return;
+
+await remove(
+ref(db,"bingo/historial")
+);
+
+cargarHistorial();
+
+}
+
+window.nuevoBingo = async function(){
+
+if(!confirm("¿Iniciar un nuevo bingo?"))
+return;
+
+await remove(
+ref(db,"bingo/historial")
+);
+
+await set(
+ref(db,"bingo/ultimoNumero"),
+"--"
+);
+
+await set(
+ref(db,"bingo/modo"),
+"normal"
+);
+
+document.getElementById("preview")
+.innerHTML="--";
+
+cargarHistorial();
+
+}
+
+window.mostrarGanador = async function(){
+
+await set(
+ref(db,"bingo/modo"),
+"ganador"
+);
+
+}
+
+window.modoNormal = async function(){
+
+await set(
+ref(db,"bingo/modo"),
+"normal"
+);
+
+}
+
+async function cargarHistorial(){
+
+try{
+
+const snapshot =
+await get(
+ref(db,"bingo/historial")
+);
+
+let html="";
+
+if(snapshot.exists()){
+
+const datos =
+snapshot.val();
+
+Object.values(datos)
+.reverse()
+.forEach(item=>{
+
+html += `
+<div class="bola">
+${item.numero}
+</div>
+`;
+
+});
+
+}
+
+document.getElementById("historial")
+.innerHTML = html;
+
+}catch(error){
+
+console.error(error);
+
+}
+
+}
+
+cargarHistorial();
+
+</script>
+
+</body>
+</html>
